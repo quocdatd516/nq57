@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Theo dõi thực hiện 01-KH/BCĐTW (NQ 57-NQ/TW)</title>
+
+  <!-- Bootstrap, Chart.js, SheetJS, Leaflet -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    body{background:#f7f9fc}
+    .doc-title{font-weight:700; text-transform:uppercase; letter-spacing:.2px}
+    .subtle{color:#6c757d}
+    .card{border-radius:14px; box-shadow:0 6px 18px rgba(30,50,80,.06); border:1px solid #e9eef5}
+    .section-title{font-weight:700; margin-bottom:.25rem}
+    .criterion h6{font-weight:700}
+    .pct-badge{min-width:74px; text-align:center}
+    .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+    @media (max-width: 992px){ .grid-2{grid-template-columns:1fr} }
+    #map{height:420px; border-radius:12px}
+    .warning{color:#c82333; font-weight:600}
+  </style>
+</head>
+<body>
+<div class="container py-4">
+
+  <!-- ===== A. THÔNG TIN CHUNG ===== -->
+  <div class="card p-4 mb-4">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <div>
+        <div class="doc-title h4 mb-1 text-primary">Theo dõi thực hiện 01-KH/BCĐTW (NQ 57-NQ/TW)</div>
+        <div class="subtle">Thông tin chung → Chỉ tiêu 6 Hệ thống → Biểu đồ → Bản đồ → Đánh giá → Xuất Excel</div>
+      </div>
+      <div class="text-end">
+        <button id="btnCalc" class="btn btn-success">Tính & cập nhật</button>
+        <button id="btnExport" class="btn btn-primary">Tải Excel</button>
+        <button id="btnReset" class="btn btn-outline-secondary">Xóa dữ liệu</button>
+      </div>
+    </div>
+    <hr>
+    <div class="row g-3">
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Năm đánh giá</label>
+        <input id="namDG" type="number" min="2025" class="form-control" placeholder="2025"/>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Đơn vị/Địa phương</label>
+        <input id="donVi" class="form-control" placeholder="VD: Ban chỉ đạo tỉnh..."/>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Mô tả kế hoạch năm</label>
+        <input id="moTa" class="form-control" placeholder="Tóm tắt nhiệm vụ trọng tâm theo 01-KH/BCĐTW"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== B. CHỈ TIÊU 6 HỆ THỐNG ===== -->
+  <div class="card p-4 mb-4">
+    <div class="section-title text-primary">B. Chỉ tiêu – kết quả (nhập số, tự tính %)</div>
+    <div class="subtle mb-2">Công thức: <b>% = Đã đạt / Chỉ tiêu × 100</b></div>
+
+    <div class="grid-2">
+      <!-- 1 -->
+      <div class="criterion card p-3">
+        <h6>1) Đổi mới thể chế & quản trị</h6>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">Chỉ tiêu</label><input id="h1_target" type="number" min="0" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Đã đạt</label><input id="h1_done" type="number" min="0" class="form-control"></div>
+        </div>
+        <div class="mt-2 d-flex align-items-center gap-2">
+          <span class="badge bg-primary pct-badge" id="h1_percent">0%</span>
+          <div class="progress flex-fill"><div class="progress-bar" id="h1_progress" style="width:0%"></div></div>
+        </div>
+      </div>
+      <!-- 2 -->
+      <div class="criterion card p-3">
+        <h6>2) Công nghiệp, tự chủ công nghệ</h6>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">Chỉ tiêu</label><input id="h2_target" type="number" min="0" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Đã đạt</label><input id="h2_done" type="number" min="0" class="form-control"></div>
+        </div>
+        <div class="mt-2 d-flex align-items-center gap-2">
+          <span class="badge bg-primary pct-badge" id="h2_percent">0%</span>
+          <div class="progress flex-fill"><div class="progress-bar" id="h2_progress" style="width:0%"></div></div>
+        </div>
+      </div>
+      <!-- 3 -->
+      <div class="criterion card p-3">
+        <h6>3) An sinh & phúc lợi</h6>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">Chỉ tiêu</label><input id="h3_target" type="number" min="0" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Đã đạt</label><input id="h3_done" type="number" min="0" class="form-control"></div>
+        </div>
+        <div class="mt-2 d-flex align-items-center gap-2">
+          <span class="badge bg-primary pct-badge" id="h3_percent">0%</span>
+          <div class="progress flex-fill"><div class="progress-bar" id="h3_progress" style="width:0%"></div></div>
+        </div>
+      </div>
+      <!-- 4 -->
+      <div class="criterion card p-3">
+        <h6>4) Hạ tầng thông tin & dữ liệu</h6>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">Chỉ tiêu</label><input id="h4_target" type="number" min="0" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Đã đạt</label><input id="h4_done" type="number" min="0" class="form-control"></div>
+        </div>
+        <div class="mt-2 d-flex align-items-center gap-2">
+          <span class="badge bg-primary pct-badge" id="h4_percent">0%</span>
+          <div class="progress flex-fill"><div class="progress-bar" id="h4_progress" style="width:0%"></div></div>
+        </div>
+      </div>
+      <!-- 5 -->
+      <div class="criterion card p-3">
+        <h6>5) Năng lực sáng tạo & văn hóa ĐMSX</h6>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">Chỉ tiêu</label><input id="h5_target" type="number" min="0" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Đã đạt</label><input id="h5_done" type="number" min="0" class="form-control"></div>
+        </div>
+        <div class="mt-2 d-flex align-items-center gap-2">
+          <span class="badge bg-primary pct-badge" id="h5_percent">0%</span>
+          <div class="progress flex-fill"><div class="progress-bar" id="h5_progress" style="width:0%"></div></div>
+        </div>
+      </div>
+      <!-- 6 -->
+      <div class="criterion card p-3">
+        <h6>6) Dự án đặc biệt quan trọng</h6>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">Chỉ tiêu</label><input id="h6_target" type="number" min="0" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Đã đạt</label><input id="h6_done" type="number" min="0" class="form-control"></div>
+        </div>
+        <div class="mt-2 d-flex align-items-center gap-2">
+          <span class="badge bg-primary pct-badge" id="h6_percent">0%</span>
+          <div class="progress flex-fill"><div class="progress-bar" id="h6_progress" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== C. BIỂU ĐỒ ===== -->
+  <div class="card p-4 mb-4">
+    <div class="section-title text-primary">C. Biểu đồ</div>
+    <div class="row g-4">
+      <div class="col-lg-4"><canvas id="radarChart"></canvas></div>
+      <div class="col-lg-4"><canvas id="pieChart"></canvas></div>
+      <div class="col-lg-4"><canvas id="lineChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== D. BẢN ĐỒ (Leaflet) ===== -->
+  <div class="card p-4 mb-4">
+    <div class="section-title text-primary">D. Bản đồ kết quả theo địa phương</div>
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Chọn tỉnh/thành</label>
+        <select id="selProvince" class="form-select">
+          <!-- 34 tỉnh/thành bạn đã thêm (giữ nguyên) -->
+          <option value="Hanoi">Hà Nội</option>
+          <option value="HCM">TP. Hồ Chí Minh</option>
+          <option value="Danang">Đà Nẵng</option>
+          <option value="QuangNgai">Quảng Ngãi</option>
+          <option value="ThuaThienHue">Thừa Thiên Huế</option>
+
+          <option value="caobang">Cao Bằng</option>
+          <option value="nghean">Nghệ An</option>
+          <option value="thanhhoa">Thanh Hoá</option>
+          <option value="Quangninh">Quảng Ninh</option>
+          <option value="Langson">Lạng Sơn</option>
+          <option value="sonla">Sơn La</option>
+          <option value="dienbien">Điện Biên</option>
+          <option value="laichau">Lai Châu</option>
+          <option value="angiang">An Giang</option>
+          <option value="camua">Cà Mau</option>
+          <option value="donhthap">Đồng Tháp</option>
+          <option value="vinhlong">Vĩnh Long</option>
+          <option value="Cantho">Thành phố Cần Thơ</option>
+          <option value="tayninh">Tây Ninh</option>
+          <option value="dongnai">Đồng Nai</option>
+          <option value="Daclac">Đắk Lắk</option>
+          <option value="Lamdong">Lâm Đồng</option>
+          <option value="khanhoa">Khánh Hoà</option>
+          <option value="Gialai">Gia Lai</option>
+          <option value="QuangTri">Quảng Trị</option>
+          <option value="NinhBinh">Ninh Bình</option>
+          <option value="Haiphong">Thành phố Hải Phòng</option>
+          <option value="HungYen">Tỉnh Hưng Yên</option>
+          <option value="BacNinh">Bắc Ninh</option>
+          <option value="PhuTho">Phú Thọ</option>
+          <option value="Thainguyen">Thái Nguyên</option>
+          <option value="Laocai">Lào Cai</option>
+          <option value="Tuyenquang">Tuyên Quang</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">% hoàn thành (tổng)</label>
+        <input id="provPercent" type="number" min="0" max="100" class="form-control" placeholder="0–100">
+      </div>
+      <div class="col-md-3">
+        <button id="btnMapUpdate" class="btn btn-success w-100">Cập nhật bản đồ</button>
+      </div>
+    </div>
+    <div id="map" class="mt-3"></div>
+    <div class="subtle mt-2">Màu điểm: <span class="text-danger">Đỏ &lt;55%</span> · <span class="text-warning">Cam 55–69%</span> · <span class="text-info">Xanh dương 70–89%</span> · <span class="text-success">Xanh lá ≥90%</span></div>
+  </div>
+
+  <!-- ===== E. KẾT QUẢ & CẢNH BÁO ===== -->
+  <div class="card p-4">
+    <div class="section-title text-primary">E. Kết quả đánh giá</div>
+    <p id="finalResult" class="h5 text-danger">Chưa có dữ liệu.</p>
+    <div id="warnings"></div>
+  </div>
+
+</div>
+
+<script>
+/* ====== TIỆN ÍCH CHUNG ====== */
+let radarChart, pieChart, lineChart;
+let progressHistory = []; // lưu tiến độ mỗi lần tính (theo năm)
+const ids = ["h1","h2","h3","h4","h5","h6"];
+const names = [
+  "Đổi mới thể chế & quản trị",
+  "Công nghiệp, tự chủ công nghệ",
+  "An sinh & phúc lợi",
+  "Hạ tầng thông tin & dữ liệu",
+  "Năng lực sáng tạo & văn hóa ĐMSX",
+  "Dự án đặc biệt quan trọng"
+];
+
+function calcPercent(done, target){ return target>0 ? (done/target*100).toFixed(1) : 0; }
+function xepLoai(tong){
+  if(tong<50) return "Chưa đạt yêu cầu";
+  if(tong>=50 && tong<66) return "Đạt trung bình";
+  if(tong>=66 && tong<70) return "Trung bình khác";
+  if(tong>=70 && tong<85) return "Khá";
+  if(tong>=85 && tong<90) return "Tốt";
+  return "Hoàn thành xuất sắc";
+}
+
+/* ====== TÍNH TOÁN & BIỂU ĐỒ ====== */
+function tinhToan(){
+  let values=[], warnings=[];
+  ids.forEach((id,i)=>{
+    let t=parseFloat(document.getElementById(id+"_target").value)||0;
+    let d=parseFloat(document.getElementById(id+"_done").value)||0;
+    let p=calcPercent(d,t);
+    values.push(parseFloat(p));
+    document.getElementById(id+"_percent").innerText=p+"%";
+    document.getElementById(id+"_progress").style.width=p+"%";
+    if(p<55){
+      warnings.push(`⚠️ ${names[i]} dưới 55% → cần có sự chỉ đạo quyết liệt nhiều hơn nữa..!`);
+    }
+  });
+
+  let tong = values.reduce((a,b)=>a+b,0)/values.length;
+  const nam = document.getElementById("namDG").value || (progressHistory.length+1);
+  document.getElementById("finalResult").innerText =
+    `Tổng kết quả công tác lãnh đạo và thực hiện ${tong.toFixed(1)}% → ${xepLoai(tong)} (Năm: ${nam})`;
+
+  // Cảnh báo
+  document.getElementById("warnings").innerHTML = warnings.length>0
+    ? warnings.map(w=>`<p class="warning">${w}</p>`).join("")
+    : `<p class="text-success">✅ Tất cả 6 hệ thống đều ≥ 55%.</p>`;
+
+  // Lưu lịch sử để vẽ Line chart
+  progressHistory.push({year: String(nam), value: tong});
+
+  // Radar
+  if(radarChart) radarChart.destroy();
+  radarChart = new Chart(document.getElementById("radarChart"),{
+    type:"radar",
+    data:{labels:names,
+      datasets:[{label:"% hoàn thành",data:values,fill:true,
+        backgroundColor:"rgba(54,162,235,0.2)",borderColor:"rgb(54,162,235)"}]}
+  });
+
+  // Pie
+  if(pieChart) pieChart.destroy();
+  pieChart = new Chart(document.getElementById("pieChart"),{
+    type:"doughnut",
+    data:{labels:["Hoàn thành","Chưa hoàn thành"],
+      datasets:[{data:[tong,100-tong],backgroundColor:["#007bff","#e0e0e0"]}]}
+  });
+
+  // Line
+  if(lineChart) lineChart.destroy();
+  lineChart = new Chart(document.getElementById("lineChart"),{
+    type:"line",
+    data:{
+      labels:progressHistory.map(p=>p.year),
+      datasets:[{label:"Tiến độ tổng (%)",data:progressHistory.map(p=>p.value),borderColor:"#28a745",fill:false}]
+    }
+  });
+}
+
+/* ====== XUẤT EXCEL ====== */
+function exportExcel(){
+  const ws_data = [
+    ["Năm", document.getElementById("namDG").value],
+    ["Đơn vị/Địa phương", document.getElementById("donVi").value],
+    ["Mô tả kế hoạch", document.getElementById("moTa").value],
+    [],
+    ["Hệ thống","Chỉ tiêu","Đã đạt","%"]
+  ];
+  ids.forEach((id,i)=>{
+    const t = document.getElementById(id+"_target").value||0;
+    const d = document.getElementById(id+"_done").value||0;
+    const p = document.getElementById(id+"_percent").innerText||"0%";
+    ws_data.push([names[i], t, d, p]);
+  });
+  ws_data.push([]);
+  ws_data.push(["Kết quả đánh giá", document.getElementById("finalResult").innerText]);
+
+  // Thêm bảng điểm tỉnh trên bản đồ (nếu có)
+  ws_data.push([]);
+  ws_data.push(["Bảng điểm theo tỉnh/thành"]);
+  ws_data.push(["Tỉnh/Thành","% tổng"]);
+  for(const [code, marker] of Object.entries(provinceMarkers)){
+    ws_data.push([codeToName(code), marker._percent ?? ""]);
+  }
+
+  let wb=XLSX.utils.book_new();
+  let ws=XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, "TheoDoi_01KH");
+  XLSX.writeFile(wb, "TheoDoi_01KH_BCDTW.xlsx");
+}
+
+/* ====== BẢN ĐỒ LEAFLET ====== */
+const provinceLocs = {
+  Hanoi:{lat:21.0278, lng:105.8342},
+  HCM:{lat:10.8231, lng:106.6297},
+  Danang:{lat:16.0544, lng:108.2022},
+  QuangNgai:{lat:15.1205, lng:108.7923},
+  ThuaThienHue:{lat:16.4637, lng:107.5909},
+
+  TuyenQuang:{lat:21.8227, lng:105.2140},
+  LaoCai:{lat:22.4809, lng:103.9755},
+  ThaiNguyen:{lat:21.5672, lng:105.8252},
+  PhuTho:{lat:21.2684, lng:105.2046},
+  BacNinh:{lat:21.1861, lng:106.0763},
+  HungYen:{lat:20.6464, lng:106.0511},
+  HaiPhong:{lat:20.8449, lng:106.6881},
+  NinhBinh:{lat:20.2506, lng:105.9740},
+  QuangTri:{lat:16.8164, lng:107.1003},
+
+  GiaLai:{lat:13.9716, lng:108.0151},
+  KhanhHoa:{lat:12.2585, lng:109.0526},
+  LamDong:{lat:11.9404, lng:108.4583},
+  DakLak:{lat:12.7100, lng:108.2378},
+  DongNai:{lat:11.0686, lng:107.1676},
+  TayNinh:{lat:11.3107, lng:106.0980},
+
+  CanTho:{lat:10.0452, lng:105.7469},
+  VinhLong:{lat:10.2560, lng:105.9640},
+  DongThap:{lat:10.4930, lng:105.6882},
+  CaMau:{lat:9.1769, lng:105.1524},
+  AnGiang:{lat:10.5216, lng:105.1259},
+
+  LaiChau:{lat:22.3964, lng:103.4586},
+  DienBien:{lat:21.3833, lng:103.0167},
+  SonLa:{lat:21.3280, lng:103.9144},
+  LangSon:{lat:21.8529, lng:106.7615},
+  QuangNinh:{lat:21.0064, lng:107.2925},
+  ThanhHoa:{lat:19.8067, lng:105.7852},
+  NgheAn:{lat:18.8067, lng:105.5986},
+  HaTinh:{lat:18.3428, lng:105.9057},
+  CaoBang:{lat:22.6657, lng:106.2570}
+};
+function codeToName(code){
+  return {
+    Hanoi:"Hà Nội", HCM:"TP. Hồ Chí Minh", Danang:"Đà Nẵng",
+    QuangNgai:"Quảng Ngãi", ThuaThienHue:"Thừa Thiên Huế",
+
+    TuyenQuang:"Tuyên Quang", LaoCai:"Lào Cai", ThaiNguyen:"Thái Nguyên",
+    PhuTho:"Phú Thọ", BacNinh:"Bắc Ninh", HungYen:"Hưng Yên",
+    HaiPhong:"Hải Phòng", NinhBinh:"Ninh Bình", QuangTri:"Quảng Trị",
+
+    GiaLai:"Gia Lai", KhanhHoa:"Khánh Hòa", LamDong:"Lâm Đồng",
+    DakLak:"Đắk Lắk", DongNai:"Đồng Nai", TayNinh:"Tây Ninh",
+
+    CanTho:"Cần Thơ", VinhLong:"Vĩnh Long", DongThap:"Đồng Tháp",
+    CaMau:"Cà Mau", AnGiang:"An Giang",
+
+    LaiChau:"Lai Châu", DienBien:"Điện Biên", SonLa:"Sơn La",
+    LangSon:"Lạng Sơn", QuangNinh:"Quảng Ninh", ThanhHoa:"Thanh Hóa",
+    NgheAn:"Nghệ An", HaTinh:"Hà Tĩnh", CaoBang:"Cao Bằng"
+  }[code] || code;
+}
+
+/* === ALIAS: quy đổi value trong <select> về mã chuẩn === */
+const provinceAlias = {
+  // Đông Bắc/Tây Bắc
+  caobang:"CaoBang", langson:"LangSon", sonla:"SonLa", dienbien:"DienBien",
+  laichau:"LaiChau", quangninh:"QuangNinh", Quangninh:"QuangNinh",
+  thainguyen:"ThaiNguyen", Thainguyen:"ThaiNguyen", laocai:"LaoCai", Laocai:"LaoCai",
+  tuyenquang:"TuyenQuang", Tuyenquang:"TuyenQuang",
+  // Bắc Trung Bộ
+  thanhhoa:"ThanhHoa", nghean:"NgheAn", hatinh:"HaTinh",
+  // Duyên hải Trung Bộ
+  quangtri:"QuangTri", khanhhoa:"KhanhHoa", khanhoa:"KhanhHoa",
+  // Tây Nguyên
+  gialai:"GiaLai", Gialai:"GiaLai", daclac:"DakLak", Daclac:"DakLak",
+  lamdong:"LamDong", Lamdong:"LamDong",
+  // Đông Nam Bộ
+  dongnai:"DongNai", tayninh:"TayNinh",
+  // Đồng bằng sông Cửu Long
+  cantho:"CanTho", Cantho:"CanTho", vinhlong:"VinhLong",
+  dongthap:"DongThap", donhthap:"DongThap", camau:"CaMau", camua:"CaMau",
+  angiang:"AnGiang",
+  // Thành phố/khác
+  haiphong:"HaiPhong", Haiphong:"HaiPhong", hungyen:"HungYen",
+  bacninh:"BacNinh", phutho:"PhuTho",
+  // Chuẩn sẵn
+  Hanoi:"Hanoi", HCM:"HCM", Danang:"Danang",
+  QuangNgai:"QuangNgai", ThuaThienHue:"ThuaThienHue",
+  NinhBinh:"NinhBinh", QuangTri:"QuangTri",
+  HungYen:"HungYen", BacNinh:"BacNinh", PhuTho:"PhuTho"
+};
+function getCanonicalCode(raw){ return provinceAlias[raw] || raw; }
+
+/* Màu theo % (xám nếu chưa có dữ liệu) */
+function colorForPercent(p){
+  if(p==null || isNaN(p)) return "#6c757d";
+  if(p<55) return "red";
+  if(p<70) return "orange";
+  if(p<90) return "blue";
+  return "green";
+}
+
+/* Khởi tạo bản đồ */
+const map = L.map('map').setView([16.2,107.5], 5.5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom: 18,
+  attribution:'© OpenStreetMap'
+}).addTo(map);
+
+/* Tạo sẵn marker cho toàn bộ 34 tỉnh/thành (màu xám nếu chưa có %) */
+const provinceMarkers = {}; // code -> circleMarker
+function initAllMarkers(){
+  for(const [code, loc] of Object.entries(provinceLocs)){
+    const color = colorForPercent(null);
+    const m = L.circleMarker([loc.lat, loc.lng],{
+      radius: 10, color, fillColor: color, fillOpacity: 0.7
+    })
+    .bindPopup(`<b>${codeToName(code)}</b><br>% tổng: <i>chưa có</i>`)
+    .addTo(map);
+    m._percent = null;
+    provinceMarkers[code] = m;
+  }
+}
+initAllMarkers();
+
+/* Cập nhật/ghi % cho một tỉnh từ form */
+function updateProvinceMarker(){
+  const raw  = document.getElementById("selProvince").value;
+  const code = getCanonicalCode(raw); // quy về mã chuẩn có trong provinceLocs
+  const p = Math.max(0, Math.min(100, parseFloat(document.getElementById("provPercent").value)||0));
+  const loc = provinceLocs[code];
+  if(!loc){ alert("Mã tỉnh/thành không khớp provinceLocs: " + raw); return; }
+
+  const color = colorForPercent(p);
+  const m = provinceMarkers[code] || L.circleMarker([loc.lat, loc.lng],{radius:10}).addTo(map);
+  m.setLatLng([loc.lat, loc.lng]);
+  m.setStyle({color, fillColor: color});
+  m.bindPopup(`<b>${codeToName(code)}</b><br>% tổng: <b>${p.toFixed(1)}%</b>`);
+  m._percent = p.toFixed(1);
+  provinceMarkers[code] = m;
+  m.openPopup();
+}
+
+/* ====== SỰ KIỆN ====== */
+document.getElementById("btnCalc").addEventListener("click", tinhToan);
+document.getElementById("btnExport").addEventListener("click", exportExcel);
+document.getElementById("btnReset").addEventListener("click", ()=>location.reload());
+document.getElementById("btnMapUpdate").addEventListener("click", updateProvinceMarker);
+</script>
+</body>
+</html>
